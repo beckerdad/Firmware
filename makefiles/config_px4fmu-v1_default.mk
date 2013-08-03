@@ -7,6 +7,7 @@
 #
 ROMFS_ROOT	 = $(PX4_BASE)/ROMFS/px4fmu_common
 
+MODULES += examples/can
 #
 # Board support modules
 #
