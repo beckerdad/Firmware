@@ -231,7 +231,7 @@ __EXPORT int can_main(int argc, char *argv[])
 
     msgflush();
     usleep(100000);
- //   goto sendAgain;
+    goto sendAgain;
 
 #endif
 
