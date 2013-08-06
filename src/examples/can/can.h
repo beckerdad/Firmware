@@ -74,7 +74,7 @@
 #endif
 
 #ifndef CONFIG_CAN_LOOPBACK
-#  error "CAN loopback is not enabled (CONFIG_CAN_LOOPBACK)"
+#  warning "CAN loopback is not enabled (CONFIG_CAN_LOOPBACK)"
 #endif
 
 #ifndef CONFIG_EXAMPLES_CAN_DEVPATH

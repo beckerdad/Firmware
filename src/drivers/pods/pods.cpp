@@ -34,7 +34,7 @@
 /**
  * @file fmu.cpp
  *
- * Driver/configurator for the PX4 FMU multi-purpose port.
+ * Driver/configurator for the lockwing CANbus pods
  */
 
 #include <nuttx/config.h>
@@ -69,6 +69,7 @@
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/actuator_controls_effective.h>
 #include <uORB/topics/actuator_outputs.h>
+#include <uORB/topics/pod_swashplate_setpoint.h>
 
 #include <systemlib/err.h>
 #include <systemlib/ppm_decode.h>
@@ -380,6 +381,9 @@ PX4FMU::task_main()
 	orb_set_interval(_t_armed, 200);		/* 5Hz update rate */
 
 	/* advertise the mixed control outputs */
+	pod_swashplate_setpoint_s pod_outputs;
+	memset(&pod_outputs, 0, sizeof(pod_outputs));
+
 	actuator_outputs_s outputs;
 	memset(&outputs, 0, sizeof(outputs));
 	/* advertise the mixed control outputs */
@@ -456,14 +460,37 @@ PX4FMU::task_main()
 
 			/* get controls - must always do this to avoid spinning */
 			orb_copy(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, _t_actuators, &_controls);
+			//actuators->control[0] = roll_control;
+			//actuators->control[1] = pitch_control;
+			//actuators->control[2] = yaw_rate_control;
+			//actuators->control[3] = rate_sp->thrust;
 
 			/* can we mix? */
 			if (_mixers != nullptr) {
 
-				/* do mixing */
-				outputs.noutputs = _mixers->mix(&outputs.output[0], num_outputs);
-				outputs.timestamp = hrt_absolute_time();
 
+				/* do mixing */
+				//collective left = throttle + controller_roll
+				//collective right = throttle - controller_roll
+				//pitch cyclic left  = 0 - controller_pitch + controller_yaw
+				//pitch cyclic right = 0 - controller_pitch - controller_yaw
+				//outputs.noutputs = _mixers->mix(&outputs.output[0], num_outputs);
+				pod_outputs.collective_left = _controls.control[3] + _controls.control[0];
+				pod_outputs.collective_right= _controls.control[3] - _controls.control[0];
+				pod_outputs.pitch_left 		= 127 -_controls.control[1] + _controls.control[2];
+				pod_outputs.pitch_right 	= 127 -_controls.control[1] - _controls.control[2];
+
+				// check limits
+				if(pod_outputs.collective_left < 0) pod_outputs.collective_left = 0;
+				if(pod_outputs.collective_left >255) pod_outputs.collective_left = 255;
+				if(pod_outputs.collective_right < 0) pod_outputs.collective_right  = 0;
+				if(pod_outputs.collective_right >255) pod_outputs.collective_right = 255;
+				if(pod_outputs.pitch_left < 0) pod_outputs.pitch_left = 0;
+				if(pod_outputs.pitch_left >255) pod_outputs.pitch_left = 255;
+				if(pod_outputs.pitch_right < 0) pod_outputs.pitch_right = 0;
+				if(pod_outputs.pitch_right >255) pod_outputs.pitch_right = 255;
+				//outputs.timestamp = hrt_absolute_time();
+				pod_outputs.timestamp = hrt_absolute_time();
 				// XXX output actual limited values
 				memcpy(&controls_effective, &_controls, sizeof(controls_effective));
 
@@ -473,23 +500,11 @@ PX4FMU::task_main()
 				for (unsigned i = 0; i < num_outputs; i++) {
 
 					/* last resort: catch NaN, INF and out-of-band errors */
-					if (i < outputs.noutputs &&
-						isfinite(outputs.output[i]) &&
-						outputs.output[i] >= -1.0f &&
-						outputs.output[i] <= 1.0f) {
-						/* scale for PWM output 900 - 2100us */
-						outputs.output[i] = 1500 + (600 * outputs.output[i]);
-					} else {
-						/*
-						 * Value is NaN, INF or out of band - set to the minimum value.
-						 * This will be clearly visible on the servo status and will limit the risk of accidentally
-						 * spinning motors. It would be deadly in flight.
-						 */
-						outputs.output[i] = 900;
-					}
 
-					/* output to the servo */
-					up_pwm_servo_set(i, outputs.output[i]);
+
+					/* send on CANbus */
+
+					//up_pwm_servo_set(i, outputs.output[i]);
 				}
 
 				/* and publish for anyone that cares to see */
