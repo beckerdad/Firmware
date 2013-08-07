@@ -37,12 +37,13 @@
  * Driver/configurator for the lockwing CANbus pods
  */
 
+
 #include <nuttx/config.h>
 
+#include <stdlib.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <semaphore.h>
 #include <string.h>
 #include <fcntl.h>
@@ -74,6 +75,9 @@
 #include <systemlib/err.h>
 #include <systemlib/ppm_decode.h>
 
+#include <nuttx/can.h>
+#include "can.h"
+
 class PX4FMU : public device::CDev
 {
 public:
@@ -97,7 +101,7 @@ public:
 
 private:
 	static const unsigned _max_actuators = 4;
-
+	int fd;
 	Mode		_mode;
 	unsigned	_pwm_default_rate;
 	unsigned	_pwm_alt_rate;
@@ -229,15 +233,39 @@ PX4FMU::init()
 		return ret;
 
 	/* try to claim the generic PWM output device node as well - it's OK if we fail at this */
-	ret = register_driver(PWM_OUTPUT_DEVICE_PATH, &fops, 0666, (void *)this);
+	//ret = register_driver(PWM_OUTPUT_DEVICE_PATH, &fops, 0666, (void *)this);
 
-	if (ret == OK) {
-		log("default PWM output device");
-		_primary_pwm_device = true;
-	}
+	//if (ret == OK) {
+	//	log("default PWM output device");
+	//	_primary_pwm_device = true;
+	//}
+
+  /* Initialization of the CAN hardware is performed by logic external to
+   * this test.
+   */
+  printf("pods_main: Initializing external CAN device\n");
+  struct can_dev_s *can;
+	can = stm32_caninitialize(2);
+	ret = can_register("/dev/can0", can);
+  if (ret != OK)
+    {
+      printf("pods_main: can_devinit failed: %d\n", ret);
+    }
+
+  /* Open the CAN device for reading */
+
+  printf("pods_main: Hardware initialized. Opening the CAN device\n");
+  fd = ::open(CONFIG_EXAMPLES_CAN_DEVPATH, 3);
+  if (fd < 0)
+    {
+      printf("pods_main: open %s failed: %d\n",
+    		  CONFIG_EXAMPLES_CAN_DEVPATH, errno);
+    }
+  else
+	  printf("device open!\n");
 
 	/* reset GPIOs */
-	gpio_reset();
+	//gpio_reset();
 
 	/* start the IO interface task */
 	_task = task_spawn_cmd("fmuservo",
@@ -368,6 +396,23 @@ PX4FMU::set_pwm_alt_channels(uint32_t channels)
 void
 PX4FMU::task_main()
 {
+  // CAN variables:
+  struct can_msg_s podLeft,podRight;
+  size_t msgsize;
+  ssize_t nbytes;
+
+    podLeft.cm_data[0] = 0; // mode, 0 means rpm is controlled
+    podLeft.cm_data[1] = 0; // stop flag
+    podLeft.cm_hdr.ch_id    = 8;
+    podLeft.cm_hdr.ch_rtr   = false;
+    podLeft.cm_hdr.ch_dlc   = 8;
+
+    podRight.cm_data[0] = 0; // mode, 0 means rpm is controlled
+    podRight.cm_data[1] = 0; // stop flag
+    podRight.cm_hdr.ch_id    = 16;
+    podRight.cm_hdr.ch_rtr   = false;
+    podRight.cm_hdr.ch_dlc   = 8;
+
 	/*
 	 * Subscribe to the appropriate PWM output topic based on whether we are the
 	 * primary PWM output or not.
@@ -466,7 +511,7 @@ PX4FMU::task_main()
 			//actuators->control[3] = rate_sp->thrust;
 
 			/* can we mix? */
-			if (_mixers != nullptr) {
+			if (1){//(_mixers != nullptr) {
 
 
 				/* do mixing */
@@ -479,6 +524,8 @@ PX4FMU::task_main()
 				pod_outputs.collective_right= _controls.control[3] - _controls.control[0];
 				pod_outputs.pitch_left 		= 127 -_controls.control[1] + _controls.control[2];
 				pod_outputs.pitch_right 	= 127 -_controls.control[1] - _controls.control[2];
+				pod_outputs.rpm_left		= rc_in.values[4]; //rc_in scale 0 to 100
+				pod_outputs.rpm_right       = rc_in.values[4];
 
 				// check limits
 				if(pod_outputs.collective_left < 0) pod_outputs.collective_left = 0;
@@ -496,16 +543,28 @@ PX4FMU::task_main()
 
 				orb_publish(_primary_pwm_device ? ORB_ID_VEHICLE_ATTITUDE_CONTROLS_EFFECTIVE : ORB_ID(actuator_controls_effective_1), _t_actuators_effective, &controls_effective);
 
-				/* iterate actuators */
-				for (unsigned i = 0; i < num_outputs; i++) {
+				// Send one CAN message to each pod
+			    podLeft.cm_data[2]=pod_outputs.rpm_left; //rpm
+			    podLeft.cm_data[3]=pod_outputs.collective_left; //collective
+			    podLeft.cm_data[4]=pod_outputs.pitch_left; //pitch cyclic
 
-					/* last resort: catch NaN, INF and out-of-band errors */
+			    podRight.cm_data[2]=pod_outputs.rpm_right; //rpm
+			    podRight.cm_data[3]=pod_outputs.collective_right; //collective
+			    podRight.cm_data[4]=pod_outputs.pitch_right; //pitch cyclic
 
+			    msgsize = CAN_MSGLEN(8);
+			    nbytes = ::write(fd, &podLeft, msgsize);
 
-					/* send on CANbus */
+			    if (nbytes != msgsize)
+			        printf("ERROR: write(%d) returned %d\n", msgsize, nbytes);
+			    else
+			    	printf("sent CAN left pod pitch cyclic:%0.1f\n",pod_outputs.pitch_left);
+			    nbytes = ::write(fd, &podRight, msgsize);
 
-					//up_pwm_servo_set(i, outputs.output[i]);
-				}
+			    if (nbytes != msgsize)
+			    	printf("ERROR: write(%d) returned %d\n", msgsize, nbytes);
+			    else
+			        printf("sent CAN right pod\n");
 
 				/* and publish for anyone that cares to see */
 				orb_publish(_primary_pwm_device ? ORB_ID_VEHICLE_CONTROLS : ORB_ID(actuator_outputs_1), _t_outputs, &outputs);
@@ -905,6 +964,7 @@ enum PortMode {
 	PORT_GPIO_AND_SERIAL,
 	PORT_PWM_AND_SERIAL,
 	PORT_PWM_AND_GPIO,
+	PORT_CAN,
 };
 
 PortMode g_port_mode;
@@ -922,6 +982,7 @@ fmu_new_mode(PortMode new_mode)
 	servo_mode = PX4FMU::MODE_NONE;
 
 	switch (new_mode) {
+	case PORT_CAN:
 	case PORT_FULL_GPIO:
 	case PORT_MODE_UNSET:
 		/* nothing more to do here */
@@ -1051,10 +1112,10 @@ fake(int argc, char *argv[])
 
 } // namespace
 
-extern "C" __EXPORT int fmu_main(int argc, char *argv[]);
+extern "C" __EXPORT int pods_main(int argc, char *argv[]);
 
 int
-fmu_main(int argc, char *argv[])
+pods_main(int argc, char *argv[])
 {
 	PortMode new_mode = PORT_MODE_UNSET;
 	const char *verb = argv[1];
@@ -1082,6 +1143,9 @@ fmu_main(int argc, char *argv[])
 
 	} else if (!strcmp(verb, "mode_pwm_gpio")) {
 		new_mode = PORT_PWM_AND_GPIO;
+
+	} else if (!strcmp(verb, "mode_can")) {
+		new_mode = PORT_CAN;
 	}
 
 	/* was a new mode set? */

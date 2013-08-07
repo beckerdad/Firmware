@@ -7,7 +7,7 @@
 #
 ROMFS_ROOT	 = $(PX4_BASE)/ROMFS/px4fmu_common
 
-MODULES += examples/can
+#MODULES += examples/can
 #
 # Board support modules
 #
@@ -17,7 +17,8 @@ MODULES		+= drivers/stm32/adc
 MODULES		+= drivers/stm32/tone_alarm
 MODULES		+= drivers/led
 MODULES		+= drivers/px4io
-MODULES		+= drivers/px4fmu
+#MODULES		+= drivers/px4fmu
+MODULES     += drivers/pods
 MODULES		+= drivers/boards/px4fmu
 MODULES		+= drivers/ardrone_interface
 MODULES		+= drivers/l3gd20
@@ -67,7 +68,7 @@ MODULES		+= modules/gpio_led
 #
 # Estimation modules (EKF / other filters)
 #
-#MODULES		+= modules/attitude_estimator_ekf
+MODULES		+= modules/attitude_estimator_ekf
 #MODULES		+= modules/attitude_estimator_so3_comp
 #MODULES		+= modules/position_estimator
 #MODULES		+= modules/att_pos_estimator_ekf
