@@ -107,10 +107,10 @@ fi
 # Check if auto-setup from one of the standard scripts is wanted
 # SYS_AUTOSTART = 0 means no autostart (default)
 #
-if param compare SYS_AUTOSTART 1
-then
+#if param compare SYS_AUTOSTART 1
+#then
 	sh /etc/init.d/01_fmu_quad_x
-fi
+#fi
 
 if param compare SYS_AUTOSTART 2
 then

@@ -105,9 +105,7 @@
  *   examples/can.
  *
  ************************************************************************************/
-__BEGIN_DECLS
-int can_devinit(void);
-__END_DECLS
+
 
 __EXPORT int can_devinit(void)
 {
