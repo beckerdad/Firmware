@@ -525,10 +525,10 @@ PX4FMU::task_main()
 				//pitch cyclic left  = 0 - controller_pitch + controller_yaw
 				//pitch cyclic right = 0 - controller_pitch - controller_yaw
 				//outputs.noutputs = _mixers->mix(&outputs.output[0], num_outputs);
-				pod_outputs.collective_left = 400*(_controls.control[3] + _controls.control[0]);
-				pod_outputs.collective_right= 400*(_controls.control[3] - _controls.control[0]);
-				pod_outputs.pitch_left 		= 127 - 400*(_controls.control[1] - _controls.control[2]);
-				pod_outputs.pitch_right 	= 127 - 400*(_controls.control[1] + _controls.control[2]);
+				pod_outputs.collective_left = 256*(_controls.control[3] + _controls.control[0]);
+				pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
+				pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] - _controls.control[2]);
+				pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] + _controls.control[2]);
 				pod_outputs.rpm_left		= (rc_in.values[5]-1100)*100/800; //rc_in scale 0 to 100
 
 				// check limits

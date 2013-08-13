@@ -74,7 +74,7 @@
 #include "lockrotor_attitude_control.h"
 #include "lockrotor_rate_control.h"
 
-PARAM_DEFINE_FLOAT(LOCK_RCLOSS_THR, 0.0f); // This defines the throttle when the RC signal is lost.
+PARAM_DEFINE_FLOAT(LR_RCLOSS_THR, 0.0f); // This defines the throttle when the RC signal is lost.
 
 __EXPORT int lockrotor_att_control_main(int argc, char *argv[]);
 
