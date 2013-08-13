@@ -59,17 +59,21 @@
 #include <systemlib/err.h>
 #include <drivers/drv_hrt.h>
 
-PARAM_DEFINE_FLOAT(LOCK_YAWRATE_P, 0.0f); /* same on Flamewheel */
-PARAM_DEFINE_FLOAT(LOCK_YAWRATE_D, 0.0f);
-PARAM_DEFINE_FLOAT(LOCK_YAWRATE_I, 0.0f);
-//PARAM_DEFINE_FLOAT(LOCK_YAWRATE_AWU, 0.0f);
-//PARAM_DEFINE_FLOAT(LOCK_YAWRATE_LIM, 1.0f);
+PARAM_DEFINE_FLOAT(LR_YAWRATE_P, 0.1f); /* same on Flamewheel */
+PARAM_DEFINE_FLOAT(LR_YAWRATE_D, 0.01f);
+PARAM_DEFINE_FLOAT(LR_YAWRATE_I, 0.0f);
+//PARAM_DEFINE_FLOAT(LR_YAWRATE_AWU, 0.0f);
+//PARAM_DEFINE_FLOAT(LR_YAWRATE_LIM, 1.0f);
 
-PARAM_DEFINE_FLOAT(LOCK_ATTRATE_P, 0.0f); /* 0.15 F405 Flamewheel */
-PARAM_DEFINE_FLOAT(LOCK_ATTRATE_D, 0.0f);
-PARAM_DEFINE_FLOAT(LOCK_ATTRATE_I, 0.0f);
-//PARAM_DEFINE_FLOAT(LOCK_ATTRATE_AWU, 0.05f);
-//PARAM_DEFINE_FLOAT(LOCK_ATTRATE_LIM, 1.0f);	/**< roughly < 500 deg/s limit */
+PARAM_DEFINE_FLOAT(LR_RATTRATE_P, 0.1f); /* 0.15 F405 Flamewheel */
+PARAM_DEFINE_FLOAT(LR_RATTRATE_D, 0.01f);
+PARAM_DEFINE_FLOAT(LR_RATTRATE_I, 0.0f);
+
+PARAM_DEFINE_FLOAT(LR_PATTRATE_P, 0.1f); /* 0.15 F405 Flamewheel */
+PARAM_DEFINE_FLOAT(LR_PATTRATE_D, 0.01f);
+PARAM_DEFINE_FLOAT(LR_PATTRATE_I, 0.0f);
+//PARAM_DEFINE_FLOAT(LR_ATTRATE_AWU, 0.05f);
+//PARAM_DEFINE_FLOAT(LR_ATTRATE_LIM, 1.0f);	/**< roughly < 500 deg/s limit */
 
 struct lock_rate_control_params {
 
@@ -79,9 +83,13 @@ struct lock_rate_control_params {
 	//float yawrate_awu;
 	//float yawrate_lim;
 
-	float attrate_p;
-	float attrate_d;
-	float attrate_i;
+	float rattrate_p;
+	float rattrate_d;
+	float rattrate_i;
+
+	float pattrate_p;
+	float pattrate_d;
+	float pattrate_i;
 	//float attrate_awu;
 	//float attrate_lim;
 
@@ -96,9 +104,12 @@ struct lock_rate_control_param_handles {
 	//param_t yawrate_awu;
 	//param_t yawrate_lim;
 
-	param_t attrate_p;
-	param_t attrate_i;
-	param_t attrate_d;
+	param_t rattrate_p;
+	param_t rattrate_i;
+	param_t rattrate_d;
+	param_t pattrate_p;
+	param_t pattrate_i;
+	param_t pattrate_d;
 	//param_t attrate_awu;
 	//param_t attrate_lim;
 };
@@ -119,17 +130,20 @@ static int parameters_update(const struct lock_rate_control_param_handles *h, st
 static int parameters_init(struct lock_rate_control_param_handles *h)
 {
 	/* PID parameters */
-	h->yawrate_p 	=	param_find("LOCK_YAWRATE_P");
-	h->yawrate_i 	=	param_find("LOCK_YAWRATE_I");
-	h->yawrate_d 	=	param_find("LOCK_YAWRATE_D");
-	//h->yawrate_awu 	=	param_find("LOCK_YAWRATE_AWU");
-	//h->yawrate_lim 	=	param_find("LOCK_YAWRATE_LIM");
+	h->yawrate_p 	=	param_find("LR_YAWRATE_P");
+	h->yawrate_i 	=	param_find("LR_YAWRATE_I");
+	h->yawrate_d 	=	param_find("LR_YAWRATE_D");
+	//h->yawrate_awu 	=	param_find("LR_YAWRATE_AWU");
+	//h->yawrate_lim 	=	param_find("LR_YAWRATE_LIM");
 
-	h->attrate_p 	= 	param_find("LOCK_ATTRATE_P");
-	h->attrate_i 	= 	param_find("LOCK_ATTRATE_I");
-	h->attrate_d 	= 	param_find("LOCK_ATTRATE_D");
-	//h->attrate_awu 	= 	param_find("LOCK_ATTRATE_AWU");
-	//h->attrate_lim 	= 	param_find("LOCK_ATTRATE_LIM");
+	h->rattrate_p 	= 	param_find("LR_RATTRATE_P");
+	h->rattrate_i 	= 	param_find("LR_RATTRATE_I");
+	h->rattrate_d 	= 	param_find("LR_RATTRATE_D");
+	h->pattrate_p 	= 	param_find("LR_PATTRATE_P");
+	h->pattrate_i 	= 	param_find("LR_PATTRATE_I");
+	h->pattrate_d 	= 	param_find("LR_PATTRATE_D");
+	//h->attrate_awu 	= 	param_find("LR_ATTRATE_AWU");
+	//h->attrate_lim 	= 	param_find("LR_ATTRATE_LIM");
 
 	return OK;
 }
@@ -142,9 +156,12 @@ static int parameters_update(const struct lock_rate_control_param_handles *h, st
 	//param_get(h->yawrate_awu, &(p->yawrate_awu));
 	//param_get(h->yawrate_lim, &(p->yawrate_lim));
 
-	param_get(h->attrate_p, &(p->attrate_p));
-	param_get(h->attrate_i, &(p->attrate_i));
-	param_get(h->attrate_d, &(p->attrate_d));
+	param_get(h->rattrate_p, &(p->rattrate_p));
+	param_get(h->rattrate_i, &(p->rattrate_i));
+	param_get(h->rattrate_d, &(p->rattrate_d));
+	param_get(h->pattrate_p, &(p->pattrate_p));
+	param_get(h->pattrate_i, &(p->pattrate_i));
+	param_get(h->pattrate_d, &(p->pattrate_d));
 	//param_get(h->attrate_awu, &(p->attrate_awu));
 	//param_get(h->attrate_lim, &(p->attrate_lim));
 
@@ -180,8 +197,8 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 		parameters_update(&h, &p);
 		initialized = true;
 
-		pid_init(&pitch_rate_controller, p.attrate_p, p.attrate_i, p.attrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
-		pid_init(&roll_rate_controller, p.attrate_p, p.attrate_i, p.attrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
+		pid_init(&pitch_rate_controller, p.pattrate_p, p.pattrate_i, p.pattrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
+		pid_init(&roll_rate_controller, p.rattrate_p, p.rattrate_i, p.rattrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
 
 	}
 
@@ -189,8 +206,8 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 	if (motor_skip_counter % 2500 == 0) {
 		/* update parameters from storage */
 		parameters_update(&h, &p);
-		pid_set_parameters(&pitch_rate_controller, p.attrate_p, p.attrate_i, p.attrate_d, 1.0f, 1.0f);
-		pid_set_parameters(&roll_rate_controller,  p.attrate_p, p.attrate_i, p.attrate_d, 1.0f, 1.0f);
+		pid_set_parameters(&pitch_rate_controller, p.pattrate_p, p.pattrate_i, p.pattrate_d, 1.0f, 1.0f);
+		pid_set_parameters(&roll_rate_controller,  p.rattrate_p, p.rattrate_i, p.rattrate_d, 1.0f, 1.0f);
 	}
 
 	/* reset integral if on ground */

@@ -62,20 +62,24 @@
 #include <systemlib/param/param.h>
 #include <drivers/drv_hrt.h>
 
-PARAM_DEFINE_FLOAT(LOCK_YAWPOS_P, 0.3f);
-PARAM_DEFINE_FLOAT(LOCK_YAWPOS_I, 0.15f);
-PARAM_DEFINE_FLOAT(LOCK_YAWPOS_D, 0.0f);
-//PARAM_DEFINE_FLOAT(LOCK_YAWPOS_AWU, 1.0f);
-//PARAM_DEFINE_FLOAT(LOCK_YAWPOS_LIM, 3.0f);
+PARAM_DEFINE_FLOAT(LR_YAWPOS_P, 0.3f);
+PARAM_DEFINE_FLOAT(LR_YAWPOS_I, 0.15f);
+PARAM_DEFINE_FLOAT(LR_YAWPOS_D, 0.0f);
+//PARAM_DEFINE_FLOAT(LR_YAWPOS_AWU, 1.0f);
+//PARAM_DEFINE_FLOAT(LR_YAWPOS_LIM, 3.0f);
 
-PARAM_DEFINE_FLOAT(LOCK_ATT_P, 0.2f);
-PARAM_DEFINE_FLOAT(LOCK_ATT_I, 0.0f);
-PARAM_DEFINE_FLOAT(LOCK_ATT_D, 0.05f);
-//PARAM_DEFINE_FLOAT(LOCK_ATT_AWU, 0.05f);
-//PARAM_DEFINE_FLOAT(LOCK_ATT_LIM, 0.4f);
+PARAM_DEFINE_FLOAT(LR_RATT_P, 2.0f);
+PARAM_DEFINE_FLOAT(LR_RATT_I, 0.0f);
+PARAM_DEFINE_FLOAT(LR_RATT_D, 0.05f);
 
-//PARAM_DEFINE_FLOAT(LOCK_ATT_XOFF, 0.0f);
-//PARAM_DEFINE_FLOAT(LOCK_ATT_YOFF, 0.0f);
+PARAM_DEFINE_FLOAT(LR_PATT_P, 2.0f);
+PARAM_DEFINE_FLOAT(LR_PATT_I, 0.0f);
+PARAM_DEFINE_FLOAT(LR_PATT_D, 0.05f);
+//PARAM_DEFINE_FLOAT(LR_ATT_AWU, 0.05f);
+//PARAM_DEFINE_FLOAT(LR_ATT_LIM, 0.4f);
+
+//PARAM_DEFINE_FLOAT(LR_ATT_XOFF, 0.0f);
+//PARAM_DEFINE_FLOAT(LR_ATT_YOFF, 0.0f);
 
 struct lock_att_control_params {
 	float yaw_p;
@@ -84,9 +88,12 @@ struct lock_att_control_params {
 	//float yaw_awu;
 	//float yaw_lim;
 
-	float att_p;
-	float att_i;
-	float att_d;
+	float ratt_p;
+	float ratt_i;
+	float ratt_d;
+	float patt_p;
+	float patt_i;
+	float patt_d;
 	//float att_awu;
 	//float att_lim;
 
@@ -101,9 +108,13 @@ struct lock_att_control_param_handles {
 	//param_t yaw_awu;
 	//param_t yaw_lim;
 
-	param_t att_p;
-	param_t att_i;
-	param_t att_d;
+	param_t ratt_p;
+	param_t ratt_i;
+	param_t ratt_d;
+
+	param_t patt_p;
+	param_t patt_i;
+	param_t patt_d;
 	//param_t att_awu;
 	//param_t att_lim;
 
@@ -127,20 +138,23 @@ static int parameters_update(const struct lock_att_control_param_handles *h, str
 static int parameters_init(struct lock_att_control_param_handles *h)
 {
 	/* PID parameters */
-	h->yaw_p 	=	param_find("LOCK_YAWPOS_P");
-	h->yaw_i 	=	param_find("LOCK_YAWPOS_I");
-	h->yaw_d 	=	param_find("LOCK_YAWPOS_D");
-	//h->yaw_awu 	=	param_find("LOCK_YAWPOS_AWU");
-	//h->yaw_lim 	=	param_find("LOCK_YAWPOS_LIM");
+	h->yaw_p 	=	param_find("LR_YAWPOS_P");
+	h->yaw_i 	=	param_find("LR_YAWPOS_I");
+	h->yaw_d 	=	param_find("LR_YAWPOS_D");
+	//h->yaw_awu 	=	param_find("LR_YAWPOS_AWU");
+	//h->yaw_lim 	=	param_find("LR_YAWPOS_LIM");
 
-	h->att_p 	= 	param_find("LOCK_ATT_P");
-	h->att_i 	= 	param_find("LOCK_ATT_I");
-	h->att_d 	= 	param_find("LOCK_ATT_D");
-	//h->att_awu 	= 	param_find("LOCK_ATT_AWU");
-	//h->att_lim 	= 	param_find("LOCK_ATT_LIM");
+	h->ratt_p 	= 	param_find("LR_RATT_P");
+	h->ratt_i 	= 	param_find("LR_RATT_I");
+	h->ratt_d 	= 	param_find("LR_RATT_D");
+	h->patt_p 	= 	param_find("LR_PATT_P");
+	h->patt_i 	= 	param_find("LR_PATT_I");
+	h->patt_d 	= 	param_find("LR_PATT_D");
+	//h->att_awu 	= 	param_find("LR_ATT_AWU");
+	//h->att_lim 	= 	param_find("LR_ATT_LIM");
 
-	//h->att_xoff 	= 	param_find("LOCK_ATT_XOFF");
-	//h->att_yoff 	= 	param_find("LOCK_ATT_YOFF");
+	//h->att_xoff 	= 	param_find("LR_ATT_XOFF");
+	//h->att_yoff 	= 	param_find("LR_ATT_YOFF");
 
 	return OK;
 }
@@ -153,9 +167,12 @@ static int parameters_update(const struct lock_att_control_param_handles *h, str
 	//param_get(h->yaw_awu, &(p->yaw_awu));
 	//param_get(h->yaw_lim, &(p->yaw_lim));
 
-	param_get(h->att_p, &(p->att_p));
-	param_get(h->att_i, &(p->att_i));
-	param_get(h->att_d, &(p->att_d));
+	param_get(h->ratt_p, &(p->ratt_p));
+	param_get(h->ratt_i, &(p->ratt_i));
+	param_get(h->ratt_d, &(p->ratt_d));
+	param_get(h->patt_p, &(p->patt_p));
+	param_get(h->patt_i, &(p->patt_i));
+	param_get(h->patt_d, &(p->patt_d));
 	//param_get(h->att_awu, &(p->att_awu));
 	//param_get(h->att_lim, &(p->att_lim));
 
@@ -194,8 +211,8 @@ void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp
 		parameters_init(&h);
 		parameters_update(&h, &p);
 
-		pid_init(&pitch_controller, p.att_p, p.att_i, p.att_d, 1000.0f, 1000.0f, PID_MODE_DERIVATIV_SET, 0.0f);
-		pid_init(&roll_controller, p.att_p, p.att_i, p.att_d, 1000.0f, 1000.0f, PID_MODE_DERIVATIV_SET, 0.0f);
+		pid_init(&pitch_controller, p.patt_p, p.patt_i, p.patt_d, 1000.0f, 1000.0f, PID_MODE_DERIVATIV_SET, 0.0f);
+		pid_init(&roll_controller, p.ratt_p, p.ratt_i, p.ratt_d, 1000.0f, 1000.0f, PID_MODE_DERIVATIV_SET, 0.0f);
 
 		initialized = true;
 	}
@@ -206,8 +223,8 @@ void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp
 		parameters_update(&h, &p);
 
 		/* apply parameters */
-		pid_set_parameters(&pitch_controller, p.att_p, p.att_i, p.att_d, 1000.0f, 1000.0f);
-		pid_set_parameters(&roll_controller, p.att_p, p.att_i, p.att_d, 1000.0f, 1000.0f);
+		pid_set_parameters(&pitch_controller, p.patt_p, p.patt_i, p.patt_d, 1000.0f, 1000.0f);
+		pid_set_parameters(&roll_controller, p.ratt_p, p.ratt_i, p.ratt_d, 1000.0f, 1000.0f);
 	}
 
 	/* reset integral if on ground */

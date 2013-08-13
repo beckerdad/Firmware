@@ -91,7 +91,7 @@ pods mode_pwm
 #
 # Start attitude control
 #
-multirotor_att_control start
+lockrotor_att_control start
 
 #
 # Start logging
