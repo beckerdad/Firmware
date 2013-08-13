@@ -1,4 +1,5 @@
 *.d
+*.pdf
 !ROMFS/*/*.d
 !ROMFS/*/*/*.d
 !ROMFS/*/*/*/*.d
