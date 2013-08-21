@@ -96,7 +96,7 @@ lockrotor_att_control start
 #
 # Start logging
 #
-#sdlog2 start -r 50 -a -b 14
+sdlog2 start -r 50 -a -b 14
  
 #
 # Start system state

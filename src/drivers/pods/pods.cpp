@@ -76,6 +76,7 @@
 
 #include <systemlib/err.h>
 #include <systemlib/ppm_decode.h>
+#include <systemlib/param/param.h>
 
 #include <nuttx/can.h>
 #include "can.h"
@@ -393,7 +394,7 @@ PX4FMU::task_main()
   size_t msgsize;
   ssize_t nbytes;
   int fd;
-
+  float rc6_min,rc6_max;
     podLeft.cm_data[0] = 0; // mode, 0 means rpm is controlled
     podLeft.cm_data[1] = 0; // stop flag
     podLeft.cm_hdr.ch_id    = 8;
@@ -462,6 +463,10 @@ PX4FMU::task_main()
 	memset(&rc_in, 0, sizeof(rc_in));
 	rc_in.input_source = RC_INPUT_SOURCE_PX4FMU_PPM;
 
+	param_t rc6_min_handle = param_find("RC6_MIN");
+	param_t rc6_max_handle = param_find("RC6_MAX");
+	param_get(rc6_min_handle, &rc6_min);
+	param_get(rc6_max_handle, &rc6_max);
 	log("starting");
 
 	/* loop until killed */
@@ -529,7 +534,7 @@ PX4FMU::task_main()
 				pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
 				pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] + _controls.control[2]);
 				pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] - _controls.control[2]);
-				pod_outputs.rpm_left		= (rc_in.values[5]-1100)*100/800; //rc_in scale 0 to 100
+				pod_outputs.rpm_left		= (rc_in.values[5]-rc6_min)*256/(rc6_max-rc6_min); //rc_in scale 0 to 100
 
 				// check limits
 				if(pod_outputs.collective_left < 0) pod_outputs.collective_left = 1;
