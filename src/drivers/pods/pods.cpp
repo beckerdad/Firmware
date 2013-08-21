@@ -395,6 +395,8 @@ PX4FMU::task_main()
   ssize_t nbytes;
   int fd;
   float rc6_min,rc6_max;
+  actuator_armed_s aa;
+
     podLeft.cm_data[0] = 0; // mode, 0 means rpm is controlled
     podLeft.cm_data[1] = 0; // stop flag
     podLeft.cm_hdr.ch_id    = 8;
@@ -534,8 +536,10 @@ PX4FMU::task_main()
 				pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
 				pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] + _controls.control[2]);
 				pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] - _controls.control[2]);
-				pod_outputs.rpm_left		= (rc_in.values[5]-rc6_min)*256/(rc6_max-rc6_min); //rc_in scale 0 to 100
-
+				if(aa.armed)
+					pod_outputs.rpm_left	= (rc_in.values[5]-rc6_min)*256/(rc6_max-rc6_min); //rc_in scale 0 to 100
+				else
+					pod_outputs.rpm_left = 1;
 				// check limits
 				if(pod_outputs.collective_left < 0) pod_outputs.collective_left = 1;
 				if(pod_outputs.collective_left >255) pod_outputs.collective_left = 255;
@@ -595,7 +599,7 @@ PX4FMU::task_main()
 
 		/* how about an arming update? */
 		if (fds[1].revents & POLLIN) {
-			actuator_armed_s aa;
+
 
 			/* get new value */
 			orb_copy(ORB_ID(actuator_armed), _t_armed, &aa);
