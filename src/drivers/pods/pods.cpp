@@ -534,8 +534,8 @@ PX4FMU::task_main()
 				//outputs.noutputs = _mixers->mix(&outputs.output[0], num_outputs);
 				pod_outputs.collective_left = 256*(_controls.control[3] + _controls.control[0]);
 				pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
-				pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] + _controls.control[2]);
-				pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] - _controls.control[2]);
+				pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] - _controls.control[2]);
+				pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] + _controls.control[2]);
 				if(aa.armed)
 					pod_outputs.rpm_left	= (rc_in.values[5]-rc6_min)*256/(rc6_max-rc6_min); //rc_in scale 0 to 100
 				else
