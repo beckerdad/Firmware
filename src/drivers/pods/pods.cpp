@@ -494,6 +494,8 @@ PX4FMU::task_main()
 				update_rate_in_ms = 100;
 			}
 
+			update_rate_in_ms = 10;
+
 			debug("adjusted actuator update interval to %ums", update_rate_in_ms);
 			orb_set_interval(_t_actuators, update_rate_in_ms);
 
