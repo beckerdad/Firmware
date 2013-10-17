@@ -394,7 +394,10 @@ PX4FMU::task_main()
   size_t msgsize;
   ssize_t nbytes;
   int fd;
-  float rc6_min,rc6_max;
+  int control_mode;
+  float rc_min[6],rc_max[6],rc_trim[6];
+  int roll_ch,pitch_ch,yaw_ch,thr_ch;
+  float roll_scale,pitch_scale,yaw_scale;
   actuator_armed_s aa;
 
     podLeft.cm_data[0] = 0; // mode, 0 means rpm is controlled
@@ -465,10 +468,63 @@ PX4FMU::task_main()
 	memset(&rc_in, 0, sizeof(rc_in));
 	rc_in.input_source = RC_INPUT_SOURCE_PX4FMU_PPM;
 
-	param_t rc6_min_handle = param_find("RC6_MIN");
-	param_t rc6_max_handle = param_find("RC6_MAX");
-	param_get(rc6_min_handle, &rc6_min);
-	param_get(rc6_max_handle, &rc6_max);
+	param_t min[6],max[6],trim[6],rev[6],dz[6];
+	/* basic r/c parameters */
+		for (unsigned i = 0; i < 6; i++) {
+			char nbuf[16];
+
+			/* min values */
+			sprintf(nbuf, "RC%d_MIN", i + 1);
+			min[i] = param_find(nbuf);
+
+			/* trim values */
+			sprintf(nbuf, "RC%d_TRIM", i + 1);
+			trim[i] = param_find(nbuf);
+
+			/* max values */
+			sprintf(nbuf, "RC%d_MAX", i + 1);
+			max[i] = param_find(nbuf);
+
+			/* channel reverse */
+			sprintf(nbuf, "RC%d_REV", i + 1);
+			 rev[i] = param_find(nbuf);
+
+			/* channel deadzone */
+			sprintf(nbuf, "RC%d_DZ", i + 1);
+			dz[i] = param_find(nbuf);
+
+		}
+
+
+		/* mandatory input switched, mapped to channels 1-4 per default */
+		param_t pid_disable	= param_find("LR_DISABLE_PID");
+		param_t rc_map_roll 	= param_find("RC_MAP_ROLL");
+		param_t rc_map_pitch = param_find("RC_MAP_PITCH");
+		param_t rc_map_yaw 	= param_find("RC_MAP_YAW");
+		param_t rc_map_throttle = param_find("RC_MAP_THROTTLE");
+		param_t rc_scale_roll = param_find("RC_SCALE_ROLL");
+		param_t rc_scale_pitch = param_find("RC_SCALE_PITCH");
+		param_t rc_scale_yaw = param_find("RC_SCALE_YAW");
+
+    param_get(pid_disable,&control_mode);
+
+	param_get(min[0], &rc_min[0]);param_get(min[1], &rc_min[1]);param_get(min[2], &rc_min[2]);
+	param_get(min[3], &rc_min[3]);param_get(min[4], &rc_min[4]);param_get(min[5], &rc_min[5]);
+	param_get(max[0], &rc_max[0]);param_get(max[1], &rc_max[1]);param_get(max[2], &rc_max[2]);
+	param_get(max[3], &rc_max[3]);param_get(max[4], &rc_max[4]);param_get(max[5], &rc_max[5]);
+	param_get(trim[0], &rc_trim[0]);param_get(trim[1], &rc_trim[1]);param_get(trim[2], &rc_trim[2]);
+	param_get(trim[3], &rc_trim[3]);param_get(trim[4], &rc_trim[4]);param_get(trim[5], &rc_trim[5]);
+
+	param_get(rc_map_roll, &roll_ch);
+	param_get(rc_map_pitch,&pitch_ch);
+	param_get(rc_map_yaw,&yaw_ch);
+	param_get(rc_map_throttle,&thr_ch);
+	roll_ch--;pitch_ch--;yaw_ch--,thr_ch--;
+
+	param_get(rc_scale_pitch,&pitch_scale);
+		param_get(rc_scale_yaw,&yaw_scale);
+		param_get(rc_scale_roll,&roll_scale);
+
 	log("starting");
 
 	/* loop until killed */
@@ -527,6 +583,11 @@ PX4FMU::task_main()
 			/* can we mix? */
 			if (1){//(_mixers != nullptr) {
 
+				volatile float throttle =  (rc_in.values[thr_ch]-rc_trim[thr_ch])/(rc_max[thr_ch]-rc_min[thr_ch]);
+				volatile float roll =  roll_scale*(rc_in.values[roll_ch]-rc_trim[roll_ch])/(rc_max[roll_ch]-rc_min[roll_ch]);
+				volatile float pitch = pitch_scale* (rc_in.values[pitch_ch]-rc_trim[pitch_ch])/(rc_max[pitch_ch]-rc_min[pitch_ch]);
+				volatile float yaw =  yaw_scale*(rc_in.values[yaw_ch]-rc_trim[yaw_ch])/(rc_max[yaw_ch]-rc_min[yaw_ch]);
+
 
 				/* do mixing */
 				//collective left = throttle + controller_roll
@@ -534,12 +595,22 @@ PX4FMU::task_main()
 				//pitch cyclic left  = 0 - controller_pitch + controller_yaw
 				//pitch cyclic right = 0 - controller_pitch - controller_yaw
 				//outputs.noutputs = _mixers->mix(&outputs.output[0], num_outputs);
-				pod_outputs.collective_left = 256*(_controls.control[3] + _controls.control[0]);
-				pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
-				pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] - _controls.control[2]);
-				pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] + _controls.control[2]);
+				if(control_mode)
+								{
+								pod_outputs.collective_left = 256*(throttle + roll);
+								pod_outputs.collective_right= 256*(throttle - roll);
+								pod_outputs.pitch_left 		= 127 - 256*(pitch + yaw);
+								pod_outputs.pitch_right 	= 127 - 256*(pitch - yaw);
+								}
+				else
+				{
+					pod_outputs.collective_left = 256*(_controls.control[3] + _controls.control[0]);
+					pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
+					pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] - _controls.control[2]);
+					pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] + _controls.control[2]);
+				}
 				if(aa.armed)
-					pod_outputs.rpm_left	= (rc_in.values[5]-rc6_min)*256/(rc6_max-rc6_min); //rc_in scale 0 to 100
+					pod_outputs.rpm_left	= (rc_in.values[5]-rc_min[5])*256/(rc_max[5]-rc_min[5]); //rc_in scale 0 to 100
 				else
 					pod_outputs.rpm_left = 1;
 				// check limits

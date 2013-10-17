@@ -62,6 +62,7 @@
 #include <systemlib/param/param.h>
 #include <drivers/drv_hrt.h>
 
+PARAM_DEFINE_INT32(LR_DISABLE_PID, 1);
 PARAM_DEFINE_FLOAT(LR_YAWPOS_P, 0.3f);
 PARAM_DEFINE_FLOAT(LR_YAWPOS_I, 0.15f);
 PARAM_DEFINE_FLOAT(LR_YAWPOS_D, 0.0f);
@@ -82,6 +83,7 @@ PARAM_DEFINE_FLOAT(LR_PATT_D, 0.05f);
 //PARAM_DEFINE_FLOAT(LR_ATT_YOFF, 0.0f);
 
 struct lock_att_control_params {
+	int disable_pid;
 	float yaw_p;
 	float yaw_i;
 	float yaw_d;
@@ -102,6 +104,7 @@ struct lock_att_control_params {
 };
 
 struct lock_att_control_param_handles {
+	param_t disable_pid;
 	param_t yaw_p;
 	param_t yaw_i;
 	param_t yaw_d;
@@ -138,6 +141,7 @@ static int parameters_update(const struct lock_att_control_param_handles *h, str
 static int parameters_init(struct lock_att_control_param_handles *h)
 {
 	/* PID parameters */
+	h->disable_pid 	=	param_find("LR_DISABLE_PID");
 	h->yaw_p 	=	param_find("LR_YAWPOS_P");
 	h->yaw_i 	=	param_find("LR_YAWPOS_I");
 	h->yaw_d 	=	param_find("LR_YAWPOS_D");
@@ -161,6 +165,7 @@ static int parameters_init(struct lock_att_control_param_handles *h)
 
 static int parameters_update(const struct lock_att_control_param_handles *h, struct lock_att_control_params *p)
 {
+	param_get(h->disable_pid, &(p->disable_pid));
 	param_get(h->yaw_p, &(p->yaw_p));
 	param_get(h->yaw_i, &(p->yaw_i));
 	param_get(h->yaw_d, &(p->yaw_d));
