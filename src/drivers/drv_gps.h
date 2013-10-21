@@ -44,6 +44,10 @@
 #include "drv_sensor.h"
 #include "drv_orb_dev.h"
 
+#define RCU_DEFAULT_UART_PORT "/dev/ttyS3"
+
+#define RCU_DEVICE_PATH	"/dev/rcu"
+
 #define GPS_DEFAULT_UART_PORT "/dev/ttyS3"
 
 #define GPS_DEVICE_PATH	"/dev/gps"

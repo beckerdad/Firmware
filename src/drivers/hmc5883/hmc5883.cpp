@@ -391,7 +391,7 @@ out:
 int HMC5883::set_range(unsigned range)
 {
 	uint8_t range_bits;
-
+/*
 	if (range < 1) {
 		range_bits = 0x00;
 		_range_scale = 1.0f / 1370.0f;
@@ -427,7 +427,7 @@ int HMC5883::set_range(unsigned range)
 		_range_scale = 1.0f / 330.0f;
 		_range_ga = 5.6f;
 
-	} else {
+	} else*/ {
 		range_bits = 0x07;
 		_range_scale = 1.0f / 230.0f;
 		_range_ga = 8.1f;
