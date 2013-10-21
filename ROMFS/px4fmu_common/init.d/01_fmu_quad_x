@@ -76,7 +76,7 @@ commander start
 #
 # Start GPS interface (depends on orb)
 #
-#gps start
+rcu start
  
 #
 # Start the attitude estimator

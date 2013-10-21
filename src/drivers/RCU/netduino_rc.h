@@ -77,7 +77,7 @@ typedef struct {
 class NETD : public GPS_Helper
 {
 public:
-	NETD(const int &fd, struct vehicle_gps_position_s *gps_position);
+	NETD(const int &fd, struct rc_over_uart_s *rc_position);
 	~NETD();
 	int				receive(unsigned timeout);
 	int				configure(unsigned &baudrate);
@@ -104,7 +104,7 @@ private:
 	void				add_byte_to_checksum(uint8_t);
 
 	int					_fd;
-	struct vehicle_gps_position_s *_gps_position;
+	struct rc_over_uart_s *_rc_position;
 	netduino_decode_state_t	_decode_state;
 	uint8_t				_mtk_revision;
 	uint8_t				_rx_buffer[MTK_RECV_BUFFER_SIZE];

@@ -47,9 +47,9 @@
 #include "netduino_rc.h"
 
 
-NETD::NETD(const int &fd, struct vehicle_gps_position_s *gps_position) :
+NETD::NETD(const int &fd, struct rc_over_uart_s *rc_position) :
 _fd(fd),
-_gps_position(gps_position),
+_rc_position(rc_position),
 _mtk_revision(0)
 {
 	decode_init();
@@ -169,6 +169,7 @@ NETD::parse_char(uint8_t b, netduino_packet_t &packet)
 
 		/* Packet size minus checksum, XXX ? */
 		if (_rx_count >= sizeof(packet)) {
+			ret = 1;
 			// Reset state machine to decode next packet
 			decode_init();
 		}
@@ -179,6 +180,12 @@ NETD::parse_char(uint8_t b, netduino_packet_t &packet)
 void
 NETD::handle_message(netduino_packet_t &packet)
 {
+	_rc_position->rc1 = packet.rc1;
+	_rc_position->rc2 = packet.rc2;
+	_rc_position->rc3 = packet.rc3;
+	_rc_position->rc4 = packet.rc4;
+	_rc_position->rc5 = packet.rc5;
+	_rc_position->rc6 = packet.rc6;
 
 	return;
 }

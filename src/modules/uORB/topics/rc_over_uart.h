@@ -1,6 +1,9 @@
 /****************************************************************************
  *
  *   Copyright (C) 2012 PX4 Development Team. All rights reserved.
+ *   Author: @author Thomas Gubler <thomasgubler@student.ethz.ch>
+ *           @author Julian Oes <joes@student.ethz.ch>
+ *           @author Lorenz Meier <lm@inf.ethz.ch>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,43 +35,39 @@
  ****************************************************************************/
 
 /**
- * @file GPS driver interface.
+ * @file vehicle_gps_position.h
+ * Definition of the GPS WGS84 uORB topic.
  */
 
-#ifndef _DRV_GPS_H
-#define _DRV_GPS_H
+#ifndef TOPIC_VEHICLE_RCU_H_
+#define TOPIC_VEHICLE_RCU_H_
 
 #include <stdint.h>
-#include <sys/ioctl.h>
+#include "../uORB.h"
 
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
-
-#define RCU_DEFAULT_UART_PORT "/dev/ttyS3"
-
-#define RCU_DEVICE_PATH	"/dev/gps"
-
-#define GPS_DEFAULT_UART_PORT "/dev/ttyS3"
-
-#define GPS_DEVICE_PATH	"/dev/gps"
-
-typedef enum {
-	GPS_DRIVER_MODE_NONE = 0,
-	GPS_DRIVER_MODE_UBX,
-	GPS_DRIVER_MODE_MTK,
-	GPS_DRIVER_MODE_NMEA,
-} gps_driver_mode_t;
-
-
-/*
- * ObjDev tag for GPS data.
+/**
+ * @addtogroup topics
+ * @{
  */
-ORB_DECLARE(gps);
 
-/*
- * ioctl() definitions
+/**
+ * GPS position in WGS84 coordinates.
  */
-#define _GPSIOCBASE			(0x2800)            //TODO: arbitrary choice...
-#define _GPSIOC(_n)		(_IOC(_GPSIOCBASE, _n))
+struct rc_over_uart_s
+{
+	uint16_t rc1;
+	uint16_t rc2;
+	uint16_t rc3;
+	uint16_t rc4;
+	uint16_t rc5;
+	uint16_t rc6;
+};
 
-#endif /* _DRV_GPS_H */
+/**
+ * @}
+ */
+
+/* register this as object request broker structure */
+ORB_DECLARE(rc_over_uart);
+
+#endif

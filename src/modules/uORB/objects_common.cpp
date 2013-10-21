@@ -80,6 +80,9 @@ ORB_DEFINE(vehicle_status, struct vehicle_status_s);
 #include "topics/battery_status.h"
 ORB_DEFINE(battery_status, struct battery_status_s);
 
+#include "topics/rc_over_uart.h"
+ORB_DEFINE(rc_over_uart, struct rc_over_uart_s);
+
 #include "topics/vehicle_global_position.h"
 ORB_DEFINE(vehicle_global_position, struct vehicle_global_position_s);
 

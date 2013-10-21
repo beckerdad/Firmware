@@ -32,11 +32,12 @@
 ############################################################################
 
 #
-# Makefile to build the sensor data collector
+# GPS driver
 #
 MAXOPTIMIZATION = -O0
-MODULE_COMMAND	= sensors
-MODULE_PRIORITY	= "SCHED_PRIORITY_MAX-5"
 
-SRCS		= sensors.cpp \
-		  sensor_params.c
+MODULE_COMMAND	= rcu
+
+SRCS		= gps_helper.cpp \
+		  netduino_rc.cpp \
+		  RC_UART.cpp

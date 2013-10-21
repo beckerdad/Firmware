@@ -40,6 +40,5 @@ MODULE_COMMAND	= gps
 SRCS		= gps.cpp \
 		  gps_helper.cpp \
 		  mtk.cpp \
-		  ubx.cpp \
-		  netduino_rc.cpp \
-		  RC_UART.cpp
+		  ubx.cpp 
+	

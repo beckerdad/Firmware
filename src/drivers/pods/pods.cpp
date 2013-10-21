@@ -73,6 +73,7 @@
 #include <uORB/topics/actuator_controls_effective.h>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/pod_swashplate_setpoint.h>
+#include <uORB/topics/rc_over_uart.h>
 
 #include <systemlib/err.h>
 #include <systemlib/ppm_decode.h>
@@ -103,6 +104,9 @@ public:
 	int		set_pwm_alt_channels(uint32_t channels);
 
 private:
+
+	int 		_rcu_sub;			/**< raw rc channels data subscription */
+
 	static const unsigned _max_actuators = 4;
 	//int fd;
 	Mode		_mode;
@@ -182,6 +186,7 @@ PX4FMU::PX4FMU() :
 	_current_update_rate(0),
 	_task(-1),
 	_t_actuators(-1),
+	_rcu_sub(-1),
 	_t_armed(-1),
 	_t_outputs(0),
 	_t_actuators_effective(0),
@@ -429,6 +434,8 @@ PX4FMU::task_main()
 	 */
 	//_t_actuators = orb_subscribe(_primary_pwm_device ? ORB_ID_VEHICLE_ATTITUDE_CONTROLS :
 	//			     ORB_ID(actuator_controls_1));
+
+  	_rcu_sub = orb_subscribe(ORB_ID(rc_over_uart));
 	_t_actuators = orb_subscribe(ORB_ID_VEHICLE_ATTITUDE_CONTROLS);
 	/* force a reset of the update rate */
 	_current_update_rate = 0;
@@ -685,8 +692,34 @@ PX4FMU::task_main()
 			}
 		}
 
+		bool rcu_updated;
+			orb_check(_rcu_sub, &rcu_updated);
+
+		if (rcu_updated) {
+					struct rc_over_uart_s	rcu_report;
+
+					orb_copy(ORB_ID(rc_over_uart), _rcu_sub, &rcu_report);
+					// we have a new PPM frame. Publish it.
+					rc_in.channel_count = 6;
+
+					rc_in.values[0] = rcu_report.rc1;
+					rc_in.values[1] = rcu_report.rc2;
+					rc_in.values[2] = rcu_report.rc3;
+					rc_in.values[3] = rcu_report.rc4;
+					rc_in.values[4] = rcu_report.rc5;
+					rc_in.values[5] = rcu_report.rc6;
+
+					rc_in.timestamp = hrt_absolute_time();
+
+					/* lazily advertise on first publication */
+					if (to_input_rc == 0) {
+						to_input_rc = orb_advertise(ORB_ID(input_rc), &rc_in);
+					} else {
+						orb_publish(ORB_ID(input_rc), to_input_rc, &rc_in);
+					}
+				}
 		// see if we have new PPM input data
-		if (ppm_last_valid_decode != rc_in.timestamp) {
+		if (0){//(ppm_last_valid_decode != rc_in.timestamp) {
 			// we have a new PPM frame. Publish it.
 			rc_in.channel_count = ppm_decoded_channels;
 			if (rc_in.channel_count > RC_INPUT_MAX_CHANNELS) {
