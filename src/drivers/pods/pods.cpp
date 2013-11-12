@@ -695,31 +695,31 @@ PX4FMU::task_main()
 		bool rcu_updated;
 			orb_check(_rcu_sub, &rcu_updated);
 
-		if (rcu_updated) {
-					struct rc_over_uart_s	rcu_report;
-
-					orb_copy(ORB_ID(rc_over_uart), _rcu_sub, &rcu_report);
-					// we have a new PPM frame. Publish it.
-					rc_in.channel_count = 6;
-
-					rc_in.values[0] = rcu_report.rc1;
-					rc_in.values[1] = rcu_report.rc2;
-					rc_in.values[2] = rcu_report.rc3;
-					rc_in.values[3] = rcu_report.rc4;
-					rc_in.values[4] = rcu_report.rc5;
-					rc_in.values[5] = rcu_report.rc6;
-
-					rc_in.timestamp = hrt_absolute_time();
-
-					/* lazily advertise on first publication */
-					if (to_input_rc == 0) {
-						to_input_rc = orb_advertise(ORB_ID(input_rc), &rc_in);
-					} else {
-						orb_publish(ORB_ID(input_rc), to_input_rc, &rc_in);
-					}
-				}
+//		if (rcu_updated) {
+//					struct rc_over_uart_s	rcu_report;
+//
+//					orb_copy(ORB_ID(rc_over_uart), _rcu_sub, &rcu_report);
+//					// we have a new PPM frame. Publish it.
+//					rc_in.channel_count = 6;
+//
+//					rc_in.values[0] = rcu_report.rc1;
+//					rc_in.values[1] = rcu_report.rc2;
+//					rc_in.values[2] = rcu_report.rc3;
+//					rc_in.values[3] = rcu_report.rc4;
+//					rc_in.values[4] = rcu_report.rc5;
+//					rc_in.values[5] = rcu_report.rc6;
+//
+//					rc_in.timestamp = hrt_absolute_time();
+//
+//					/* lazily advertise on first publication */
+//					if (to_input_rc == 0) {
+//						to_input_rc = orb_advertise(ORB_ID(input_rc), &rc_in);
+//					} else {
+//						orb_publish(ORB_ID(input_rc), to_input_rc, &rc_in);
+//					}
+//				}
 		// see if we have new PPM input data
-		if (0){//(ppm_last_valid_decode != rc_in.timestamp) {
+		if (ppm_last_valid_decode != rc_in.timestamp) {
 			// we have a new PPM frame. Publish it.
 			rc_in.channel_count = ppm_decoded_channels;
 			if (rc_in.channel_count > RC_INPUT_MAX_CHANNELS) {
