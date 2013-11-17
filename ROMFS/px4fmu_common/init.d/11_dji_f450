@@ -48,9 +48,10 @@ then
 	sh /etc/init.d/rc.io
 else
 	# Start MAVLink (on UART1 / ttyS0)
-	mavlink start -d /dev/ttyS0
-	usleep 5000
-	fmu mode_pwm
+	#mavlink start -d /dev/ttyS0
+	echo "[init] Pods CAN app started"
+	usleep 5000000
+	pods mode_pwm
 	param set BAT_V_SCALING 0.004593
 	set EXIT_ON_END yes
 fi
@@ -58,19 +59,19 @@ fi
 #
 # Load mixer
 #
-mixer load /dev/pwm_output /etc/mixers/FMU_quad_x.mix
+#mixer load /dev/pwm_output /etc/mixers/FMU_quad_x.mix
 
 #
 # Set PWM output frequency
 #
-pwm rate -c 1234 -r 400
+#pwm rate -c 1234 -r 400
 
 #
 # Set disarmed, min and max PWM signals (for DJI ESCs)
 #
-pwm disarmed -c 1234 -p 900
-pwm min -c 1234 -p 1200
-pwm max -c 1234 -p 1800
+#pwm disarmed -c 1234 -p 900
+#pwm min -c 1234 -p 1200
+#pwm max -c 1234 -p 1800
 
 #
 # Start common multirotor apps

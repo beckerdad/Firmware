@@ -357,9 +357,6 @@ RCU::print_info()
 		case GPS_DRIVER_MODE_MTK:
 			warnx("protocol: MTK");
 			break;
-		case GPS_DRIVER_MODE_NMEA:
-			warnx("protocol: NMEA");
-			break;
 		default:
 			break;
 	}

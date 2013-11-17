@@ -169,7 +169,7 @@ static int parameters_update(const struct lock_rate_control_param_handles *h, st
 }
 
 void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
-			      const float rates[], struct actuator_controls_s *actuators)
+			      const float rates[], struct actuator_controls_s *actuators, bool reset_integral)
 {
 	static uint64_t last_run = 0;
 	const float deltaT = (hrt_absolute_time() - last_run) / 1000000.0f;
@@ -185,6 +185,7 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 
 	static PID_t pitch_rate_controller;
 	static PID_t roll_rate_controller;
+	static PID_t yaw_rate_controller;
 
 	static struct lock_rate_control_params p;
 	static struct lock_rate_control_param_handles h;
@@ -199,7 +200,7 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 
 		pid_init(&pitch_rate_controller, p.pattrate_p, p.pattrate_i, p.pattrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
 		pid_init(&roll_rate_controller, p.rattrate_p, p.rattrate_i, p.rattrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
-
+		pid_init(&yaw_rate_controller, p.yawrate_p, p.yawrate_i, p.yawrate_d, 1.0f, 1.0f, PID_MODE_DERIVATIV_CALC_NO_SP, 0.003f);
 	}
 
 	/* load new parameters with lower rate */
@@ -208,34 +209,24 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 		parameters_update(&h, &p);
 		pid_set_parameters(&pitch_rate_controller, p.pattrate_p, p.pattrate_i, p.pattrate_d, 1.0f, 1.0f);
 		pid_set_parameters(&roll_rate_controller,  p.rattrate_p, p.rattrate_i, p.rattrate_d, 1.0f, 1.0f);
+		pid_set_parameters(&yaw_rate_controller,  p.yawrate_p, p.yawrate_i, p.yawrate_d, 1.0f, 1.0f);
 	}
 
-	/* reset integral if on ground */
-	if (rate_sp->thrust < 0.01f) {
+	/* reset integrals if needed */
+	if (reset_integral) {
 		pid_reset_integral(&pitch_rate_controller);
 		pid_reset_integral(&roll_rate_controller);
+		pid_reset_integral(&yaw_rate_controller);
 	}
 
-	/* control pitch (forward) output */
-	float pitch_control = pid_calculate(&pitch_rate_controller, rate_sp->pitch ,
-					    rates[1], 0.0f, deltaT);
-
-	/* control roll (left/right) output */
-	float roll_control = pid_calculate(&roll_rate_controller, rate_sp->roll ,
-					   rates[0], 0.0f, deltaT);
-
-	/* control yaw rate */ //XXX use library here
-	float yaw_rate_control = p.yawrate_p * (rate_sp->yaw - rates[2]);
-
-	/* increase resilience to faulty control inputs */
-	if (!isfinite(yaw_rate_control)) {
-		yaw_rate_control = 0.0f;
-		warnx("rej. NaN ctrl yaw");
-	}
+	/* run pitch, roll and yaw controllers */
+	float pitch_control = pid_calculate(&pitch_rate_controller, rate_sp->pitch, rates[1], 0.0f, deltaT);
+	float roll_control = pid_calculate(&roll_rate_controller, rate_sp->roll, rates[0], 0.0f, deltaT);
+	float yaw_control = pid_calculate(&yaw_rate_controller, rate_sp->yaw, rates[2], 0.0f, deltaT);
 
 	actuators->control[0] = roll_control;
 	actuators->control[1] = pitch_control;
-	actuators->control[2] = yaw_rate_control;
+	actuators->control[2] = yaw_control;
 	actuators->control[3] = rate_sp->thrust;
 
 	motor_skip_counter++;

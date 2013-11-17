@@ -75,21 +75,18 @@ MODULES		+= modules/gpio_led
 # Estimation modules (EKF / other filters)
 #
 MODULES		+= modules/attitude_estimator_ekf
-<<<<<<< HEAD
 #MODULES		+= modules/attitude_estimator_so3_comp
 #MODULES		+= modules/position_estimator
 #MODULES		+= modules/att_pos_estimator_ekf
 #MODULES		+= examples/flow_position_estimator
-=======
 MODULES		+= modules/att_pos_estimator_ekf
 MODULES		+= modules/position_estimator_inav
 MODULES		+= examples/flow_position_estimator
->>>>>>> upstream/master
+
 
 #
 # Vehicle Control
 #
-<<<<<<< HEAD
 #MODULES		+= modules/fixedwing_backside
 #MODULES		+= modules/fixedwing_att_control
 #MODULES		+= modules/fixedwing_pos_control
@@ -98,7 +95,6 @@ MODULES		+= modules/lockrotor_att_control
 #MODULES		+= modules/multirotor_pos_control
 #MODULES		+= examples/flow_position_control
 #MODULES		+= examples/flow_speed_control
-=======
 #MODULES		+= modules/segway # XXX Needs GCC 4.7 fix
 MODULES		+= modules/fw_pos_control_l1
 MODULES		+= modules/fw_att_control
@@ -106,7 +102,7 @@ MODULES		+= modules/multirotor_att_control
 MODULES		+= modules/multirotor_pos_control
 MODULES		+= examples/flow_position_control
 MODULES		+= examples/flow_speed_control
->>>>>>> upstream/master
+
 
 #
 # Logging

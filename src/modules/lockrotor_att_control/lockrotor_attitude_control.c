@@ -188,7 +188,7 @@ static int parameters_update(const struct lock_att_control_param_handles *h, str
 }
 
 void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp,
-				 const struct vehicle_attitude_s *att, struct vehicle_rates_setpoint_s *rates_sp, bool control_yaw_position)
+				 const struct vehicle_attitude_s *att, struct vehicle_rates_setpoint_s *rates_sp, bool control_yaw_position, bool reset_integral)
 {
 	static uint64_t last_run = 0;
 	static uint64_t last_input = 0;
@@ -232,10 +232,11 @@ void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp
 		pid_set_parameters(&roll_controller, p.ratt_p, p.ratt_i, p.ratt_d, 1000.0f, 1000.0f);
 	}
 
-	/* reset integral if on ground */
-	if (att_sp->thrust < 0.1f) {
+	/* reset integrals if needed */
+	if (reset_integral) {
 		pid_reset_integral(&pitch_controller);
 		pid_reset_integral(&roll_controller);
+		//TODO pid_reset_integral(&yaw_controller);
 	}
 
 
@@ -268,6 +269,8 @@ void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp
 	}
 
 	rates_sp->thrust = att_sp->thrust;
+	//need to update the timestamp now that we've touched rates_sp
+    rates_sp->timestamp = hrt_absolute_time();
 
 	motor_skip_counter++;
 }

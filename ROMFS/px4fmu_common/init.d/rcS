@@ -193,14 +193,11 @@ then
 		set MODE custom
 	fi
 
-
-#
-# Check if auto-setup from one of the standard scripts is wanted
-# SYS_AUTOSTART = 0 means no autostart (default)
-#
 #if param compare SYS_AUTOSTART 1
 #then
-	sh /etc/init.d/01_fmu_quad_x
+	#sh /etc/init.d/01_fmu_quad_x
+	sh /etc/init.d/11_dji_f450
+		set MODE custom
 #fi
 
 	if param compare SYS_AUTOSTART 11

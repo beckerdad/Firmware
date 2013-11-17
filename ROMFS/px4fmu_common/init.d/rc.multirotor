@@ -16,7 +16,7 @@ sh /etc/init.d/rc.logging
 #
 # Start GPS interface (depends on orb)
 #
-gps start
+#gps start
 
 #
 # Start the attitude estimator
@@ -31,7 +31,7 @@ position_estimator_inav start
 #
 # Start attitude control
 #
-multirotor_att_control start
+lockrotor_att_control start
 
 #
 # Start position control
