@@ -532,6 +532,7 @@ PX4FMU::task_main()
 		param_get(rc_scale_yaw,&yaw_scale);
 		param_get(rc_scale_roll,&roll_scale);
 
+
 	log("starting");
 
 	/* loop until killed */
@@ -611,10 +612,15 @@ PX4FMU::task_main()
 								}
 				else
 				{
+
+
+					// James puts a hack in here to enable yaw control.
 					pod_outputs.collective_left = 256*(_controls.control[3] + _controls.control[0]);
 					pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
 					pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] - _controls.control[2]);
+//					pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] + yaw);
 					pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] + _controls.control[2]);
+//					pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] - yaw);
 				}
 				if(aa.armed)
 					pod_outputs.rpm_left	= (rc_in.values[5]-rc_min[5])*256/(rc_max[5]-rc_min[5]); //rc_in scale 0 to 100

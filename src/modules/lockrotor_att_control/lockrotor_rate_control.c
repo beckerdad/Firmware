@@ -233,6 +233,7 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 		warnx("rej. NaN ctrl yaw");
 	}
 
+
 	actuators->control[0] = roll_control;
 	actuators->control[1] = pitch_control;
 	actuators->control[2] = yaw_rate_control;

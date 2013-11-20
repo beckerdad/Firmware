@@ -249,6 +249,7 @@ void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp
 	rates_sp->roll = pid_calculate(&roll_controller, att_sp->roll_body ,
 				       att->roll, att->rollspeed, deltaT);
 
+
 	if (control_yaw_position) {
 		/* control yaw rate */
 
@@ -264,9 +265,10 @@ void lockrotor_control_attitude(const struct vehicle_attitude_setpoint_s *att_sp
 			yaw_error += M_TWOPI_F;
 		}
 
-		rates_sp->yaw = p.yaw_p * (yaw_error) - (p.yaw_d * att->yawspeed);
+		//rates_sp->yaw = p.yaw_p * (yaw_error) - (p.yaw_d * att->yawspeed);
 	}
 
+//	rates_sp->yaw = att_sp->yaw_body;
 	rates_sp->thrust = att_sp->thrust;
 
 	motor_skip_counter++;
