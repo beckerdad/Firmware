@@ -48,7 +48,7 @@ then
 	sh /etc/init.d/rc.io
 else
 	# Start MAVLink (on UART1 / ttyS0)
-	#mavlink start -d /dev/ttyS0
+	mavlink start -d /dev/ttyS0
 	echo "[init] Pods CAN app started"
 	usleep 5000000
 	pods mode_pwm
