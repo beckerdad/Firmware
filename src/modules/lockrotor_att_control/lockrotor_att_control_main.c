@@ -357,39 +357,43 @@ lr_thread_main(int argc, char *argv[])
 			/* check if we should we reset integrals */
 			bool reset_integral = !control_mode.flag_armed || att_sp.thrust < 0.1f;	// TODO use landed status instead of throttle
 
+			//
+			//	James comments out the new run controller calls.
+			//
+
 			/* run attitude controller if needed */
-			if (control_mode.flag_control_attitude_enabled) {
-				lockrotor_control_attitude(&att_sp, &att, &rates_sp, control_yaw_position, reset_integral);
-				orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
-			}
+//			if (control_mode.flag_control_attitude_enabled) {
+//				lockrotor_control_attitude(&att_sp, &att, &rates_sp, control_yaw_position, reset_integral);
+//				orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
+//			}
 
 			/* measure in what intervals the controller runs */
 			perf_count(lr_interval_perf);
 
-			/* run rates controller if needed */
-			if (control_mode.flag_control_rates_enabled) {
-				/* get current rate setpoint */
-				bool rates_sp_updated = false;
-				orb_check(vehicle_rates_setpoint_sub, &rates_sp_updated);
 
-				if (rates_sp_updated) {
-					orb_copy(ORB_ID(vehicle_rates_setpoint), vehicle_rates_setpoint_sub, &rates_sp);
-				}
+			/* run rates controller if needed */
+//			if (control_mode.flag_control_rates_enabled) {
+//				/* get current rate setpoint */*				bool rates_sp_updated = false;
+//				orb_check(vehicle_rates_setpoint_sub, &rates_sp_updated);
+//
+//				if (rates_sp_updated) {
+//					orb_copy(ORB_ID(vehicle_rates_setpoint), vehicle_rates_setpoint_sub, &rates_sp);
+//				}
 
 				/* apply controller */
-				float rates[3];
-				rates[0] = att.rollspeed;
-				rates[1] = att.pitchspeed;
-				rates[2] = att.yawspeed;
-				lockrotor_control_rates(&rates_sp, rates, &actuators, reset_integral);
+//				float rates[3];
+//				rates[0] = att.rollspeed;
+//				rates[1] = att.pitchspeed;
+//				rates[2] = att.yawspeed;
+//				lockrotor_control_rates(&rates_sp, rates, &actuators, reset_integral);
 
-			} else {
-				/* rates controller disabled, set actuators to zero for safety */
-				actuators.control[0] = 0.0f;
-				actuators.control[1] = 0.0f;
-				actuators.control[2] = 0.0f;
-				actuators.control[3] = 0.0f;
-			}
+//			} else {
+//				/* rates controller disabled, set actuators to zero for safety */
+//				actuators.control[0] = 0.0f;
+//				actuators.control[1] = 0.0f;
+//				actuators.control[2] = 0.0f;
+//				actuators.control[3] = 0.0f;
+//			}
 
 
 			/* fill in manual control values */
@@ -397,17 +401,22 @@ lr_thread_main(int argc, char *argv[])
 			actuators.control[5] = manual.aux1;
 			actuators.control[6] = manual.aux2;
 			actuators.control[7] = manual.aux3;
-				//	James has now hacked yaw control to work. He now modifies the rate controller into the form:
-				//	cmd = error*pGain + rate*rateGain.
+			//	James has now hacked yaw control to work. He now modifies the rate controller into the form:
+			//	cmd = error*pGain + rate*rateGain.
 
-				actuators.control[0] = actuators.control[0] - gyro[0]*Jrollrate_p;
-				actuators.control[1] = actuators.control[1] - gyro[1]*Jpitchrate_p;
-				actuators.control[2] = manual.yaw*Jyaw_p - gyro[2]*Jyawrate_p;
+			float rates[3];
+			rates[0] = att.rollspeed;
+			rates[1] = att.pitchspeed;
+			rates[2] = att.yawspeed;
+
+			actuators.control[0] = actuators.control[0] - rates[0]*Jrollrate_p;
+			actuators.control[1] = actuators.control[1] - rates[1]*Jpitchrate_p;
+			actuators.control[2] = manual.yaw*Jyaw_p - rates[2]*Jyawrate_p;
 
 
 
-//				lockrotor_control_rates(&rates_sp, gyro, &actuators);
-				orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);
+//			lockrotor_control_rates(&rates_sp, gyro, &actuators);
+			orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);
 
 			actuators.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);
