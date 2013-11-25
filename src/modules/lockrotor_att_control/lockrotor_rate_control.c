@@ -224,6 +224,7 @@ void lockrotor_control_rates(const struct vehicle_rates_setpoint_s *rate_sp,
 	float roll_control = pid_calculate(&roll_rate_controller, rate_sp->roll, rates[0], 0.0f, deltaT);
 	float yaw_control = pid_calculate(&yaw_rate_controller, rate_sp->yaw, rates[2], 0.0f, deltaT);
 
+
 	actuators->control[0] = roll_control;
 	actuators->control[1] = pitch_control;
 	actuators->control[2] = yaw_control;

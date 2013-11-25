@@ -143,6 +143,20 @@ lr_thread_main(int argc, char *argv[])
 		{ .fd = vehicle_attitude_sub, .events = POLLIN },
 	};
 
+	// James adds some paramgets to get the rate gains
+		param_t yawrate_p = param_find("LR_YAWRATE_P");
+		param_t yaw_p = param_find("LR_YAWPOS_P");
+		param_t pattrate_p = param_find("LR_PATTRATE_P");
+		param_t rattrate_p = param_find("LR_RATTRATE_P");
+		float Jyawrate_p;
+		float Jpitchrate_p;
+		float Jrollrate_p;
+		float Jyaw_p;
+		param_get(yawrate_p, &(Jyawrate_p));
+		param_get(pattrate_p, &(Jpitchrate_p));
+		param_get(rattrate_p, &(Jrollrate_p));
+		param_get(yaw_p, &(Jyaw_p));
+
 	while (!thread_should_exit) {
 
 		/* wait for a sensor update, check for exit condition every 500 ms */
@@ -325,6 +339,15 @@ lr_thread_main(int argc, char *argv[])
 						att_sp.timestamp = hrt_absolute_time();
 						orb_publish(ORB_ID(vehicle_attitude_setpoint), att_sp_pub, &att_sp);
 					}
+
+				/** STEP 3: Identify the controller setup to run and set up the inputs correctly */
+
+				// James changes the &rates_sp to &actuators
+				if (state.flag_control_attitude_enabled) {
+					lockrotor_control_attitude(&att_sp, &att, &actuators, control_yaw_position);
+
+					//James removes below line, doesn't need it anymore.
+					//orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
 				}
 
 				/* reset yaw setpoint after non-manual control */
@@ -368,11 +391,23 @@ lr_thread_main(int argc, char *argv[])
 				actuators.control[3] = 0.0f;
 			}
 
+
 			/* fill in manual control values */
 			actuators.control[4] = manual.flaps;
 			actuators.control[5] = manual.aux1;
 			actuators.control[6] = manual.aux2;
 			actuators.control[7] = manual.aux3;
+				//	James has now hacked yaw control to work. He now modifies the rate controller into the form:
+				//	cmd = error*pGain + rate*rateGain.
+
+				actuators.control[0] = actuators.control[0] - gyro[0]*Jrollrate_p;
+				actuators.control[1] = actuators.control[1] - gyro[1]*Jpitchrate_p;
+				actuators.control[2] = manual.yaw*Jyaw_p - gyro[2]*Jyawrate_p;
+
+
+
+//				lockrotor_control_rates(&rates_sp, gyro, &actuators);
+				orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);
 
 			actuators.timestamp = hrt_absolute_time();
 			orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);
