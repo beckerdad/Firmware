@@ -343,8 +343,8 @@ lr_thread_main(int argc, char *argv[])
 				/** STEP 3: Identify the controller setup to run and set up the inputs correctly */
 
 				// James changes the &rates_sp to &actuators
-				if (state.flag_control_attitude_enabled) {
-					lockrotor_control_attitude(&att_sp, &att, &actuators, control_yaw_position);
+//				if (state.flag_control_attitude_enabled) {
+//					lockrotor_control_attitude(&att_sp, &att, &actuators, control_yaw_position);
 
 					//James removes below line, doesn't need it anymore.
 					//orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
@@ -356,6 +356,9 @@ lr_thread_main(int argc, char *argv[])
 
 			/* check if we should we reset integrals */
 			bool reset_integral = !control_mode.flag_armed || att_sp.thrust < 0.1f;	// TODO use landed status instead of throttle
+
+			// James Inserts here
+			lockrotor_control_attitude(&att_sp, &att, &actuators, control_yaw_position, reset_integral);
 
 			//
 			//	James comments out the new run controller calls.
