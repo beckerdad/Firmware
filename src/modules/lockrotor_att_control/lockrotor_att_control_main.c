@@ -339,16 +339,10 @@ lr_thread_main(int argc, char *argv[])
 						att_sp.timestamp = hrt_absolute_time();
 						orb_publish(ORB_ID(vehicle_attitude_setpoint), att_sp_pub, &att_sp);
 					}
-
+				}
 				/** STEP 3: Identify the controller setup to run and set up the inputs correctly */
 
-				// James changes the &rates_sp to &actuators
-				if (state.flag_control_attitude_enabled) {
-					lockrotor_control_attitude(&att_sp, &att, &actuators, control_yaw_position);
 
-					//James removes below line, doesn't need it anymore.
-					//orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
-				}
 
 				/* reset yaw setpoint after non-manual control */
 				reset_yaw_sp = true;
@@ -357,10 +351,11 @@ lr_thread_main(int argc, char *argv[])
 			/* check if we should we reset integrals */
 			bool reset_integral = !control_mode.flag_armed || att_sp.thrust < 0.1f;	// TODO use landed status instead of throttle
 
-			/* run attitude controller if needed */
+			// James changes the &rates_sp to &actuators
 			if (control_mode.flag_control_attitude_enabled) {
-				lockrotor_control_attitude(&att_sp, &att, &rates_sp, control_yaw_position, reset_integral);
-				orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
+				lockrotor_control_attitude(&att_sp, &att, &actuators, control_yaw_position, reset_integral);
+				//James removes below line, doesn't need it anymore.
+				//orb_publish(ORB_ID(vehicle_rates_setpoint), rates_sp_pub, &rates_sp);
 			}
 
 			/* measure in what intervals the controller runs */
@@ -400,9 +395,9 @@ lr_thread_main(int argc, char *argv[])
 				//	James has now hacked yaw control to work. He now modifies the rate controller into the form:
 				//	cmd = error*pGain + rate*rateGain.
 
-				actuators.control[0] = actuators.control[0] - gyro[0]*Jrollrate_p;
-				actuators.control[1] = actuators.control[1] - gyro[1]*Jpitchrate_p;
-				actuators.control[2] = manual.yaw*Jyaw_p - gyro[2]*Jyawrate_p;
+				actuators.control[0] = actuators.control[0] - att.rollspeed*Jrollrate_p;
+				actuators.control[1] = actuators.control[1] - att.pitchspeed*Jpitchrate_p;
+				actuators.control[2] = manual.yaw*Jyaw_p - att.yawspeed*Jyawrate_p;
 
 
 
