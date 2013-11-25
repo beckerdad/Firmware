@@ -87,6 +87,9 @@ ORB_DEFINE(safety, struct safety_s);
 #include "topics/battery_status.h"
 ORB_DEFINE(battery_status, struct battery_status_s);
 
+#include "topics/sim_over_uart.h"
+ORB_DEFINE(sim_over_uart, struct sim_over_uart_s);
+
 #include "topics/rc_over_uart.h"
 ORB_DEFINE(rc_over_uart, struct rc_over_uart_s);
 

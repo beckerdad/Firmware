@@ -1,6 +1,8 @@
 /****************************************************************************
  *
- *   Copyright (C) 2012 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012, 2013 PX4 Development Team. All rights reserved.
+ *   Author: Thomas Gubler <thomasgubler@student.ethz.ch>
+ *           Julian Oes <joes@student.ethz.ch>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,49 +33,36 @@
  *
  ****************************************************************************/
 
-/**
- * @file drv_gps.h
- *
- * GPS driver interface.
+/** 
+ * @file gps_helper.h
  */
 
-#ifndef _DRV_GPS_H
-#define _DRV_GPS_H
+#ifndef GPS_HELPER_H
+#define GPS_HELPER_H
 
-#include <stdint.h>
-#include <sys/ioctl.h>
+#include <uORB/uORB.h>
+#include <uORB/topics/vehicle_gps_position.h>
+#include <uORB/topics/vehicle_attitude.h>
 
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
+class GPS_Helper
+{
+public:
+	virtual int			configure(unsigned &baud) = 0;
+	virtual int 			receive(unsigned timeout) = 0;
+	int 				set_baudrate(const int &fd, unsigned baud);
+	float				get_position_update_rate();
+	float				get_velocity_update_rate();
+	float				reset_update_rates();
+	float				store_update_rates();
 
-#define RCU_DEFAULT_UART_PORT "/dev/ttyS3"
+protected:
+	uint8_t _rate_count_lat_lon;
+	uint8_t _rate_count_vel;
 
-#define RCU_DEVICE_PATH	"/dev/gps"
+	float _rate_lat_lon;
+	float _rate_vel;
 
-#define SIMU_DEFAULT_UART_PORT "/dev/ttyS3"
+	uint64_t _interval_rate_start;
+};
 
-#define SIMU_DEVICE_PATH	"/dev/gps"
-
-#define GPS_DEFAULT_UART_PORT "/dev/ttyS3"
-
-#define GPS_DEVICE_PATH	"/dev/gps"
-
-typedef enum {
-	GPS_DRIVER_MODE_NONE = 0,
-	GPS_DRIVER_MODE_UBX,
-	GPS_DRIVER_MODE_MTK
-} gps_driver_mode_t;
-
-
-/*
- * ObjDev tag for GPS data.
- */
-ORB_DECLARE(gps);
-
-/*
- * ioctl() definitions
- */
-#define _GPSIOCBASE			(0x2800)            //TODO: arbitrary choice...
-#define _GPSIOC(_n)		(_IOC(_GPSIOCBASE, _n))
-
-#endif /* _DRV_GPS_H */
+#endif /* GPS_HELPER_H */
