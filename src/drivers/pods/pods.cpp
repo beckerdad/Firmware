@@ -780,12 +780,12 @@ PX4FMU::task_main()
 					up_pwm_servo_arm(pwm_on);
 				}
 			}
-/*
+
 		bool rcu_updated;
 			orb_check(_rcu_sub, &rcu_updated);
 
 
-		if (rcu_updated) {
+			/*		if (rcu_updated) {
 					struct rc_over_uart_s	rcu_report;
 
 					orb_copy(ORB_ID(rc_over_uart), _rcu_sub, &rcu_report);
@@ -809,7 +809,7 @@ PX4FMU::task_main()
 					}
 				}
 	*/
-#ifdef HRT_PPM_CHANNEL
+//#ifdef HRT_PPM_CHANNEL
 		// see if we have new PPM input data
 		if (ppm_last_valid_decode != rc_in.timestamp) {
 			// we have a new PPM frame. Publish it.
@@ -829,7 +829,7 @@ PX4FMU::task_main()
 				orb_publish(ORB_ID(input_rc), to_input_rc, &rc_in);
 			}
 		}
-#endif
+//#endif
 
 	}
 
