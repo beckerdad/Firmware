@@ -657,6 +657,7 @@ PX4FMU::task_main()
 			    podRight.cm_data[4]=pod_outputs.pitch_right; //pitch cyclic
 
 			    msgsize = CAN_MSGLEN(8);
+
 			    usleep(1000);
 			    nbytes = ::write(fd, &podLeft, msgsize);
 

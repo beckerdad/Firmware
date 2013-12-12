@@ -410,7 +410,7 @@ lock_thread_main(int argc, char *argv[])
 
 				actuators.control[0] = actuators.control[0] - gyro[0]*Jrollrate_p;
 				actuators.control[1] = actuators.control[1] - gyro[1]*Jpitchrate_p;
-				actuators.control[2] = manual.yaw*Jyaw_p + gyro[2]*Jyawrate_p;
+				actuators.control[2] = manual.yaw*Jyaw_p - gyro[2]*Jyawrate_p;
 
 
 
