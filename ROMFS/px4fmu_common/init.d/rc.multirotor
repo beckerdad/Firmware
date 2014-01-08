@@ -21,8 +21,8 @@ sh /etc/init.d/rc.logging
 #
 # Start the attitude estimator
 #
-#attitude_estimator_madgwick start
-sim start 
+attitude_estimator_madgwick start
+#sim start 
  
 #
 # Start position estimator

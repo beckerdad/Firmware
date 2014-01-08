@@ -310,6 +310,8 @@ PX4FMU::init()
     {
       printf("pods_main: can_devinit failed: %d\n", ret);
     }
+  else
+	  printf("success\n");
 
 
 	/* reset GPIOs */
