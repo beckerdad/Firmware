@@ -50,7 +50,7 @@ else
 	# Start MAVLink (on UART1 / ttyS0)
 	mavlink start -d /dev/ttyS0
 	echo "[init] Pods CAN app started"
-	usleep 5000000
+	usleep 5000
 	pods mode_pwm
 	param set BAT_V_SCALING 0.004593
 	set EXIT_ON_END yes

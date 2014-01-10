@@ -21,7 +21,7 @@ MODULES		+= drivers/px4io
 MODULES		+= drivers/px4fmu
 MODULES     += drivers/pods
 MODULES		+= drivers/boards/px4fmu-v1
-MODULES		+= drivers/ardrone_interface
+#MODULES		+= drivers/ardrone_interface
 MODULES		+= drivers/l3gd20
 MODULES		+= drivers/bma180
 MODULES		+= drivers/mpu6000
@@ -30,7 +30,7 @@ MODULES		+= drivers/ms5611
 MODULES		+= drivers/mb12xx
 #MODULES		+= drivers/gps
 MODULES     += drivers/sim
-MODULES		+= drivers/hil
+#MODULES		+= drivers/hil
 MODULES		+= drivers/hott/hott_telemetry
 MODULES		+= drivers/hott/hott_sensors
 MODULES		+= drivers/blinkm
@@ -38,8 +38,8 @@ MODULES		+= drivers/rgbled
 MODULES		+= drivers/mkblctrl
 MODULES		+= drivers/roboclaw
 MODULES		+= drivers/airspeed
-MODULES		+= drivers/ets_airspeed
-MODULES		+= drivers/meas_airspeed
+#MODULES		+= drivers/ets_airspeed
+#MODULES		+= drivers/meas_airspeed
 MODULES		+= modules/sensors
 
 #
@@ -101,8 +101,8 @@ MODULES		+= modules/fw_pos_control_l1
 MODULES		+= modules/fw_att_control
 MODULES		+= modules/multirotor_att_control
 MODULES		+= modules/multirotor_pos_control
-MODULES		+= examples/flow_position_control
-MODULES		+= examples/flow_speed_control
+#MODULES		+= examples/flow_position_control
+#MODULES		+= examples/flow_speed_control
 
 
 #

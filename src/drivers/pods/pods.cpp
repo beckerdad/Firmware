@@ -187,8 +187,8 @@ const PX4FMU::GPIOConfig PX4FMU::_gpio_tab[] = {
 	{GPIO_GPIO3_INPUT, GPIO_GPIO3_OUTPUT, GPIO_USART2_RTS_1},
 	{GPIO_GPIO4_INPUT, GPIO_GPIO4_OUTPUT, GPIO_USART2_TX_1},
 	{GPIO_GPIO5_INPUT, GPIO_GPIO5_OUTPUT, GPIO_USART2_RX_1},
-	{GPIO_GPIO6_INPUT, GPIO_GPIO6_OUTPUT, GPIO_CAN2_TX_2},
-	{GPIO_GPIO7_INPUT, GPIO_GPIO7_OUTPUT, GPIO_CAN2_RX_2},
+	{GPIO_GPIO6_INPUT, GPIO_GPIO6_OUTPUT, GPIO_CAN2_TX_1},
+	{GPIO_GPIO7_INPUT, GPIO_GPIO7_OUTPUT, GPIO_CAN2_RX_1},
 #endif
 #if defined(CONFIG_ARCH_BOARD_PX4FMU_V2)
 	{GPIO_GPIO0_INPUT,       GPIO_GPIO0_OUTPUT,       0},
@@ -304,6 +304,9 @@ PX4FMU::init()
   printf("pods_main: Initializing external CAN device\n");
   struct can_dev_s *can;
   can = stm32_caninitialize(2);
+  if(can == NULL)
+	  printf("failed to init can\n");
+
   ret = can_register("/dev/can0", can);
   //ret = ::can_devinit();
   if (ret != OK)
