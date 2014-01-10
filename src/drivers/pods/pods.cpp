@@ -187,8 +187,8 @@ const PX4FMU::GPIOConfig PX4FMU::_gpio_tab[] = {
 	{GPIO_GPIO3_INPUT, GPIO_GPIO3_OUTPUT, GPIO_USART2_RTS_1},
 	{GPIO_GPIO4_INPUT, GPIO_GPIO4_OUTPUT, GPIO_USART2_TX_1},
 	{GPIO_GPIO5_INPUT, GPIO_GPIO5_OUTPUT, GPIO_USART2_RX_1},
-	{GPIO_GPIO6_INPUT, GPIO_GPIO6_OUTPUT, GPIO_CAN2_TX_1},
-	{GPIO_GPIO7_INPUT, GPIO_GPIO7_OUTPUT, GPIO_CAN2_RX_1},
+	//{GPIO_GPIO6_INPUT, GPIO_GPIO6_OUTPUT, GPIO_CAN2_TX_1},
+	//{GPIO_GPIO7_INPUT, GPIO_GPIO7_OUTPUT, GPIO_CAN2_RX_1},
 #endif
 #if defined(CONFIG_ARCH_BOARD_PX4FMU_V2)
 	{GPIO_GPIO0_INPUT,       GPIO_GPIO0_OUTPUT,       0},
@@ -740,14 +740,14 @@ PX4FMU::task_main()
 			    podRight.cm_data[4]=pod_outputs.pitch_right; //pitch cyclic
 
 			    msgsize = CAN_MSGLEN(8);
-			    usleep(1000);
+			    //usleep(1000);
 			    nbytes = ::write(fd, &podLeft, msgsize);
 
 			    if (nbytes != msgsize)
 			        printf("ERROR: write(%d) returned %d\n", msgsize, nbytes);
 			    else
 			    	;//printf("sent CAN left pod pitch cyclic:%0.1f\n",pod_outputs.pitch_left);
-			    usleep(1000);
+			    usleep(200);
 			    nbytes = ::write(fd, &podRight, msgsize);
 
 			    if (nbytes != msgsize)
