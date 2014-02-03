@@ -740,14 +740,14 @@ PX4FMU::task_main()
 			    podRight.cm_data[4]=pod_outputs.pitch_right; //pitch cyclic
 
 			    msgsize = CAN_MSGLEN(8);
-			    //usleep(1000);
+			    usleep(1000);
 			    nbytes = ::write(fd, &podLeft, msgsize);
 
 			    if (nbytes != msgsize)
 			        printf("ERROR: write(%d) returned %d\n", msgsize, nbytes);
 			    else
 			    	;//printf("sent CAN left pod pitch cyclic:%0.1f\n",pod_outputs.pitch_left);
-			    usleep(200);
+			    usleep(1000);
 			    nbytes = ::write(fd, &podRight, msgsize);
 
 			    if (nbytes != msgsize)
