@@ -361,47 +361,15 @@ lr_thread_main(int argc, char *argv[])
 			/* measure in what intervals the controller runs */
 			perf_count(lr_interval_perf);
 
-	// James removes the below if because it is clashing with previous stuff.
-
-			/* run rates controller if needed */
-//			if (control_mode.flag_control_rates_enabled) {
-//				/* get current rate setpoint */
-//				bool rates_sp_updated = false;
-//				orb_check(vehicle_rates_setpoint_sub, &rates_sp_updated);
-//
-//				if (rates_sp_updated) {
-//					orb_copy(ORB_ID(vehicle_rates_setpoint), vehicle_rates_setpoint_sub, &rates_sp);
-//				}
-//
-//				/* apply controller */
-//				float rates[3];
-//				rates[0] = att.rollspeed;
-//				rates[1] = att.pitchspeed;
-//				rates[2] = att.yawspeed;
-//				lockrotor_control_rates(&rates_sp, rates, &actuators, reset_integral);
-//
-//			} else {
-//				/* rates controller disabled, set actuators to zero for safety */
-//				actuators.control[0] = 0.0f;
-//				actuators.control[1] = 0.0f;
-//				actuators.control[2] = 0.0f;
-//				actuators.control[3] = 0.0f;
-//			}
-
-
 			/* fill in manual control values */
 			actuators.control[4] = manual.flaps;
 			actuators.control[5] = manual.aux1;
 			actuators.control[6] = manual.aux2;
 			actuators.control[7] = manual.aux3;
-				//	James has now hacked yaw control to work. He now modifies the rate controller into the form:
-				//	cmd = error*pGain + rate*rateGain.
 
 			actuators.control[0] = actuators.control[0] - att.rollspeed*Jrollrate_p;
 			actuators.control[1] = actuators.control[1] - att.pitchspeed*Jpitchrate_p;
 			actuators.control[2] = manual.yaw*Jyaw_p - att.yawspeed*Jyawrate_p;
-
-
 
 //			lockrotor_control_rates(&rates_sp, gyro, &actuators);
 			orb_publish(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, actuator_pub, &actuators);

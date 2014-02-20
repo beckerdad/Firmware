@@ -673,19 +673,17 @@ PX4FMU::task_main()
 			orb_copy(ORB_ID_VEHICLE_ATTITUDE_CONTROLS, _t_actuators, &_controls);
 
 			/* can we mix? */
-			if (1){//(_mixers != nullptr) {
+			if (1){
+
+				//
+				// Secretly, now throttle is throttle, collective is now on channel 5.
+				//
 
 				volatile float throttle =  (rc_in.values[thr_ch]-rc_trim[thr_ch])/(rc_max[thr_ch]-rc_min[thr_ch]);
 				volatile float roll =  roll_scale*(rc_in.values[roll_ch]-rc_trim[roll_ch])/(rc_max[roll_ch]-rc_min[roll_ch]);
 				volatile float pitch = pitch_scale* (rc_in.values[pitch_ch]-rc_trim[pitch_ch])/(rc_max[pitch_ch]-rc_min[pitch_ch]);
 				volatile float yaw =  yaw_scale*(rc_in.values[yaw_ch]-rc_trim[yaw_ch])/(rc_max[yaw_ch]-rc_min[yaw_ch]);
 
-				/* do mixing */
-				//collective left = throttle + controller_roll
-				//collective right = throttle - controller_roll
-				//pitch cyclic left  = 0 - controller_pitch + controller_yaw
-				//pitch cyclic right = 0 - controller_pitch - controller_yaw
-				//outputs.noutputs = _mixers->mix(&outputs.output[0], num_outputs);
 				if(control_mode)
 				{
 					pod_outputs.collective_left = 256*(throttle + roll);
@@ -695,20 +693,43 @@ PX4FMU::task_main()
 				}
 				else
 				{
-
-
-					// James puts a hack in here to enable yaw control.
 					pod_outputs.collective_left = 256*(_controls.control[3] + _controls.control[0]);
 					pod_outputs.collective_right= 256*(_controls.control[3] - _controls.control[0]);
 					pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] - _controls.control[2]);
-//					pod_outputs.pitch_left 		= 127 - 256*(_controls.control[1] + yaw);
 					pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] + _controls.control[2]);
-//					pod_outputs.pitch_right 	= 127 - 256*(_controls.control[1] - yaw);
 				}
-				if(aa.armed)
-					pod_outputs.rpm_left	= (rc_in.values[5]-rc_min[5])*256/(rc_max[5]-rc_min[5]); //rc_in scale 0 to 100
+
+				//
+				// James changes the arm statement below to set the throttle to zero if we are not armed.
+				// NB!!: collective is now secretly throttle... For this configuration only...
+				//
+
+				//if(aa.armed)
+				if(_armed == 1)
+				{//pod_outputs.rpm_left	= (rc_in.values[5]-rc_min[5])*256/(rc_max[5]-rc_min[5]); //rc_in scale 0 to 100
+					// Leave settings alone...
+				}
 				else
-					pod_outputs.rpm_left = 1;
+				{	//pod_outputs.rpm_left = 1;
+					// Now set it all to zero.
+					pod_outputs.collective_left = 0;
+					pod_outputs.collective_right = 0;
+				}
+
+				//
+				// James adds a check here to set motor throttle to zero if stick is down.
+				// This way the roll controller can't just spin up the rotors if someone
+				// touches the px4, or something like that, even if we armed.
+				// NB!!!: again, collective is secretly throttle for this configuration.
+				//
+
+				if(throttle < 0.05)
+				{
+					pod_outputs.collective_left = 0;
+					pod_outputs.collective_right = 0;
+				}
+
+
 				// check limits
 				if(pod_outputs.collective_left < 0) pod_outputs.collective_left = 1;
 				if(pod_outputs.collective_left >255) pod_outputs.collective_left = 255;
@@ -740,14 +761,14 @@ PX4FMU::task_main()
 			    podRight.cm_data[4]=pod_outputs.pitch_right; //pitch cyclic
 
 			    msgsize = CAN_MSGLEN(8);
-			    usleep(1000);
+			    usleep(500);
 			    nbytes = ::write(fd, &podLeft, msgsize);
 
 			    if (nbytes != msgsize)
 			        printf("ERROR: write(%d) returned %d\n", msgsize, nbytes);
 			    else
 			    	;//printf("sent CAN left pod pitch cyclic:%0.1f\n",pod_outputs.pitch_left);
-			    usleep(1000);
+			    usleep(500);
 			    nbytes = ::write(fd, &podRight, msgsize);
 
 			    if (nbytes != msgsize)
@@ -785,35 +806,7 @@ PX4FMU::task_main()
 					up_pwm_servo_arm(pwm_on);
 				}
 			}
-/*
-		bool rcu_updated;
-			orb_check(_rcu_sub, &rcu_updated);
 
-
-		if (rcu_updated) {
-					struct rc_over_uart_s	rcu_report;
-
-					orb_copy(ORB_ID(rc_over_uart), _rcu_sub, &rcu_report);
-					// we have a new PPM frame. Publish it.
-					rc_in.channel_count = 6;
-
-					rc_in.values[0] = rcu_report.rc1;
-					rc_in.values[1] = rcu_report.rc2;
-					rc_in.values[2] = rcu_report.rc3;
-					rc_in.values[3] = rcu_report.rc4;
-					rc_in.values[4] = rcu_report.rc5;
-					rc_in.values[5] = rcu_report.rc6;
-
-					rc_in.timestamp = hrt_absolute_time();
-
-					// lazily advertise on first publication
-					if (to_input_rc == 0) {
-						to_input_rc = orb_advertise(ORB_ID(input_rc), &rc_in);
-					} else {
-						orb_publish(ORB_ID(input_rc), to_input_rc, &rc_in);
-					}
-				}
-	*/
 #ifdef HRT_PPM_CHANNEL
 		// see if we have new PPM input data
 		if (ppm_last_valid_decode != rc_in.timestamp) {
