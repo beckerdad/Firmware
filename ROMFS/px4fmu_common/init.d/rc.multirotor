@@ -21,7 +21,10 @@ sh /etc/init.d/rc.logging
 #
 # Start the attitude estimator
 #
-attitude_estimator_madgwick start
+
+attitude_estimator_ekf start
+# James comments out the madgwick filer, we want to use kalman again
+#attitude_estimator_madgwick start
 #sim start 
  
 #
